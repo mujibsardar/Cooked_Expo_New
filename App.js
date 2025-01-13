@@ -11,12 +11,22 @@ import firebaseConfig from "./src/config/firebaseConfig";
 import { Provider } from "react-redux";
 import store from "./src/state/store/store";
 import NoInternetConnectionScreen from "./src/screens/noInternetConnection/NoInternetConnectionScreen";
+import AuthenticationStackNavigator from "./src/navigation/AuthenticationStackNavigator";
+import AppNavigator from "./src/navigation/AppNavigator";
+import {
+  getAuth,
+  initializeAuth,
+  getReactNativePersistence,
+  onAuthStateChanged,
+} from "firebase/auth";
+import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
 
 const Stack = createNativeStackNavigator();
 
 const App = () => {
   const [isConnected, setIsConnected] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null); // Initialize user state
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
@@ -25,11 +35,15 @@ const App = () => {
 
     const initialize = async () => {
       // Initialize Firebase
-      console.log("Initializing Firebase");
-      console.log(firebaseConfig);
-      initializeApp(firebaseConfig);
-      console.log("Firebase Initialized");
-      setLoading(false);
+      const app = initializeApp(firebaseConfig);
+      //Authentication setup
+      const auth = initializeAuth(app, {
+        persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+      });
+      onAuthStateChanged(auth, (user) => {
+        setUser(user);
+        setLoading(false);
+      });
     };
 
     initialize();
@@ -61,16 +75,7 @@ const App = () => {
         <GestureHandlerRootView style={{ flex: 1 }}>
           <StatusBar barStyle="dark-content" />
           <NavigationContainer>
-            <Stack.Navigator
-              screenOptions={{
-                headerShown: false,
-              }}
-            >
-              <Stack.Screen
-                name="Main"
-                component={() => <Text>Main App</Text>}
-              />
-            </Stack.Navigator>
+            {user ? <AppNavigator /> : <AuthenticationStackNavigator />}
           </NavigationContainer>
         </GestureHandlerRootView>
       </SafeAreaProvider>
