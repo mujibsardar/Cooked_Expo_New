@@ -20,13 +20,27 @@ import {
   onAuthStateChanged,
 } from "firebase/auth";
 import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
+import * as Font from "expo-font";
 
 const Stack = createNativeStackNavigator();
+
+const customFonts = {
+  "Roboto-Black": require("./src/assets/fonts/Roboto-Black.ttf"),
+  "Roboto-Bold": require("./src/assets/fonts/Roboto-Bold.ttf"),
+  "Roboto-Regular": require("./src/assets/fonts/Roboto-Regular.ttf"),
+  "Roboto-Thin": require("./src/assets/fonts/Roboto-Thin.ttf"),
+};
 
 const App = () => {
   const [isConnected, setIsConnected] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null); // Initialize user state
+  const [user, setUser] = useState(null);
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+
+  const loadFontsAsync = async () => {
+    await Font.loadAsync(customFonts);
+    setFontsLoaded(true);
+  };
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
@@ -36,7 +50,6 @@ const App = () => {
     const initialize = async () => {
       // Initialize Firebase
       const app = initializeApp(firebaseConfig);
-      //Authentication setup
       const auth = initializeAuth(app, {
         persistence: getReactNativePersistence(ReactNativeAsyncStorage),
       });
@@ -44,6 +57,8 @@ const App = () => {
         setUser(user);
         setLoading(false);
       });
+      //Load fonts
+      await loadFontsAsync();
     };
 
     initialize();
@@ -53,7 +68,7 @@ const App = () => {
     };
   }, []);
 
-  if (loading) {
+  if (loading || !fontsLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" />
